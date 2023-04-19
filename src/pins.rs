@@ -30,7 +30,7 @@ pub async fn pins() -> anyhow::Result<Vec<IPFSCID>> {
     let variables = pin_query::Variables {
         ids: Some((*DEPLOYERS).iter().map(|s| s.to_lowercase()).collect()),
         first: 300,
-        skip: 0,
+        skip: 100,
     };
     let request_body = PinQuery::build_query(variables);
     let client = reqwest::Client::new();
