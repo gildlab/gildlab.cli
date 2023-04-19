@@ -1,0 +1,11 @@
+query PinQuery($ids: [String!]) {
+    hashes(
+        first:100
+        skip: 0
+        orderBy:timestamp
+        orderDirection: desc
+        where: {offchainAssetReceiptVaultDeployer_in: $ids}
+    ) {
+        hash
+    }
+}

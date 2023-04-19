@@ -6,4 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.2.3", features = ["derive"] }
+anyhow = "1.0.70"
+bs58 = "0.4.0"
+clap = { version = "4.2.3", features = ["derive", "cargo"] }
+graphql_client = "0.12.0"
+lazy_static = "1.4.0"
+multihash = "0.18.1"
+reqwest = { version = "0.11.16", features = ["json"] }
+serde = "1.0.160"
+tokio = { version = "1.27.0", features = ["full"] }

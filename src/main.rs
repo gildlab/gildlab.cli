@@ -1,22 +1,23 @@
-use clap::Parser;
+mod pins;
 
-/// Simple program to greet a person
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Name of the person to greet
-    #[arg(short, long)]
-    name: String,
+use anyhow::Result;
+use clap::Command;
+use clap::command;
+#[macro_use]
+extern crate lazy_static;
 
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
-}
+static PINS_COMMAND_NAME: &str = "pins";
 
-fn main() {
-    let args = Args::parse();
+#[tokio::main]
+async fn main() -> Result<()> {
+    let matches = command!().subcommand(
+        Command::new(PINS_COMMAND_NAME).about("Gets all pins from subgraph")
+    ).get_matches();
 
-    for _ in 0..args.count {
-        println!("Hello {}!", args.name)
+    if let Some(_) = matches.subcommand_matches(PINS_COMMAND_NAME) {
+        let pins = pins::pins().await?;
+        dbg!(&pins);
     }
+
+    Ok(())
 }
