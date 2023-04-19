@@ -15,6 +15,7 @@ lazy_static! {
 }
 
 static URL: &str = "https://api.thegraph.com/subgraphs/name/gildlab/offchainassetvault-mumbai";
+static PAGE_SIZE: i64 = 500;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -27,27 +28,41 @@ pub struct PinQuery;
 type IPFSCID = MultihashGeneric<32>;
 
 pub async fn pins() -> anyhow::Result<Vec<IPFSCID>> {
-    let variables = pin_query::Variables {
-        ids: Some((*DEPLOYERS).iter().map(|s| s.to_lowercase()).collect()),
-        first: 300,
-        skip: 100,
-    };
-    let request_body = PinQuery::build_query(variables);
-    let client = reqwest::Client::new();
-    let res = client.post(URL).json(&request_body).send().await?;
-    let response_body: Response<pin_query::ResponseData> = res.json().await?;
-    match response_body {
-        Response { data: Some(pin_query::ResponseData{ hashes }), .. } => {
-            Ok(hashes.into_iter().filter_map(|pin_query_hashes| {
-                // Decode and drop any data that doesn't cleanly convert to a
-                // multihash.
-                bs58::decode(pin_query_hashes.hash).into_vec()
-                .map_err(anyhow::Error::from)
-                .and_then(|data| IPFSCID::from_bytes(&data).map_err(anyhow::Error::from)).ok()
-        }).collect())
-        },
-        _ => {
-            Ok(vec![])
+    let mut all = vec![];
+    let mut page: Vec<IPFSCID>;
+    let mut skip = 0;
+
+    loop {
+        let variables = pin_query::Variables {
+            ids: Some((*DEPLOYERS).iter().map(|s| s.to_lowercase()).collect()),
+            first: PAGE_SIZE,
+            skip,
+        };
+        let request_body = PinQuery::build_query(variables);
+        let client = reqwest::Client::new();
+        let res = client.post(URL).json(&request_body).send().await?;
+        let response_body: Response<pin_query::ResponseData> = res.json().await?;
+        page = match response_body {
+            Response { data: Some(pin_query::ResponseData{ hashes }), .. } => {
+                hashes.into_iter().filter_map(|pin_query_hashes| {
+                    // Decode and drop any data that doesn't cleanly convert to a
+                    // multihash.
+                    bs58::decode(pin_query_hashes.hash).into_vec()
+                    .map_err(anyhow::Error::from)
+                    .and_then(|data| IPFSCID::from_bytes(&data).map_err(anyhow::Error::from)).ok()
+            }).collect()
+            },
+            _ => {
+                vec![]
+            }
+        };
+        if page.is_empty() {
+            break;
+        }
+        else {
+            skip += PAGE_SIZE;
+            all.extend(page);
         }
     }
+    Ok(all)
 }
