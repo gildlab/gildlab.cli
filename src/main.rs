@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
 
     if let Some(_) = matches.subcommand_matches(PINS_COMMAND_NAME) {
         let pins = pins::pins().await?;
-        dbg!(&pins);
+        dbg!(&pins.len());
     }
 
     Ok(())
