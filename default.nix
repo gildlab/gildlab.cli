@@ -13,6 +13,7 @@ pkgs.mkShell {
   # were you to to use nix-build not nix-shell and build whatever you were working on
   buildInputs = [
     pkgs.rustc
+    pkgs.rustfmt
     pkgs.cargo
     pkgs.darwin.apple_sdk.frameworks.Security
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation
@@ -27,5 +28,8 @@ pkgs.mkShell {
   shellHook = ''
   export PATH="$PATH:$HOME/.cargo/bin"
   export NIX_LDFLAGS="-F${pkgs.darwin.apple_sdk.frameworks.CoreFoundation}/Library/Frameworks -framework CoreFoundation $NIX_LDFLAGS";
+
+  # https://github.com/rust-lang/rustfmt/issues/1707
+  export DYLD_LIBRARY_PATH=$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH;
   '';
 }

@@ -9,9 +9,13 @@ edition = "2021"
 anyhow = "1.0.70"
 bs58 = "0.4.0"
 clap = { version = "4.2.3", features = ["derive", "cargo"] }
+futures = "0.3.28"
 graphql_client = "0.12.0"
-lazy_static = "1.4.0"
 multihash = "0.18.1"
+once_cell = "1.17.1"
 reqwest = { version = "0.11.16", features = ["json"] }
 serde = "1.0.160"
+strum = "0.24.1"
+strum_macros = "0.24.3"
 tokio = { version = "1.27.0", features = ["full"] }
+url = "2.3.1"
