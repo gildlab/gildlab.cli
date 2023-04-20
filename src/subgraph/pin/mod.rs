@@ -1,4 +1,3 @@
-use crate::author::AUTHORS;
 use crate::ipfs::IPFSCID;
 use crate::subgraph::Subgraph;
 use graphql_client::GraphQLQuery;
@@ -14,17 +13,18 @@ static PAGE_SIZE: i64 = 500;
 )]
 pub struct PinQuery;
 
-pub async fn pins_from_subgraph(subgraph: Subgraph) -> anyhow::Result<Vec<IPFSCID>> {
+pub async fn pins_from_subgraph(subgraph: Subgraph, authors: Vec<String>) -> anyhow::Result<Vec<IPFSCID>> {
     let mut all = vec![];
     let mut page: Vec<IPFSCID>;
     let mut skip = 0;
 
     loop {
         let variables = pin_query::Variables {
-            ids: Some(AUTHORS.into_iter().map(std::convert::Into::into).collect()),
+            ids: Some(authors.clone()),
             first: PAGE_SIZE,
             skip,
         };
+
         let request_body = PinQuery::build_query(variables);
         let client = reqwest::Client::new();
         let res = client
@@ -60,6 +60,7 @@ pub async fn pins_from_subgraph(subgraph: Subgraph) -> anyhow::Result<Vec<IPFSCI
         if page.is_empty() {
             break;
         } else {
+            tracing::info!("page length {} {}", subgraph.network, page.len());
             skip += PAGE_SIZE;
             all.extend(page);
         }
