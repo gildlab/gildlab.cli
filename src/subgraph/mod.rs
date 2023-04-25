@@ -4,9 +4,8 @@ use url::Url;
 
 use crate::evm::network::Network;
 
-static BASE_URL: Lazy<Url> = Lazy::new(|| {
-    Url::parse("https://api.thegraph.com/subgraphs/name/gildlab/").unwrap()
-});
+static BASE_URL: Lazy<Url> =
+    Lazy::new(|| Url::parse("https://api.thegraph.com/subgraphs/name/gildlab/").unwrap());
 
 static SUBGRAPH_PREFIX: &str = "offchainassetvault";
 
@@ -27,8 +26,15 @@ pub mod test {
     #[test]
     pub fn subgraph_url() {
         assert_eq!(
-            Subgraph{ network: Network::Ethereum }.url().unwrap(),
-            Url::parse("https://api.thegraph.com/subgraphs/name/gildlab/offchainassetvault-ethereum").unwrap()
+            Subgraph {
+                network: Network::Ethereum
+            }
+            .url()
+            .unwrap(),
+            Url::parse(
+                "https://api.thegraph.com/subgraphs/name/gildlab/offchainassetvault-ethereum"
+            )
+            .unwrap()
         );
     }
 }

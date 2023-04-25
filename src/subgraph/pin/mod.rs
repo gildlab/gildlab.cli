@@ -13,7 +13,10 @@ static PAGE_SIZE: i64 = 500;
 )]
 pub struct PinQuery;
 
-pub async fn pins_from_subgraph(subgraph: Subgraph, authors: Vec<String>) -> anyhow::Result<Vec<IPFSCID>> {
+pub async fn pins_from_subgraph(
+    subgraph: Subgraph,
+    authors: Vec<String>,
+) -> anyhow::Result<Vec<IPFSCID>> {
     let mut all = vec![];
     let mut page: Vec<IPFSCID>;
     let mut skip = 0;
