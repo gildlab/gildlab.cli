@@ -15,21 +15,12 @@ pkgs.mkShell {
     pkgs.rustc
     pkgs.rustfmt
     pkgs.cargo
-    # pkgs.darwin.apple_sdk.frameworks.Security
-    # pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-    # pkgs.darwin.apple_sdk.frameworks.CoreServices
     pkgs.pkgconfig
     pkgs.openssl
     pkgs.iconv
   ];
 
-  LIBCLANG_PATH="${pkgs.llvmPackages.libclang}/lib";
-
   shellHook = ''
-  export PATH="$PATH:$HOME/.cargo/bin"
-  # export NIX_LDFLAGS="-F${pkgs.darwin.apple_sdk.frameworks.CoreFoundation}/Library/Frameworks -framework CoreFoundation $NIX_LDFLAGS";
-
-  # https://github.com/rust-lang/rustfmt/issues/1707
-  # export DYLD_LIBRARY_PATH=$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH;
+    export PATH="$PATH:$HOME/.cargo/bin"
   '';
 }
