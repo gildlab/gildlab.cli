@@ -64,7 +64,7 @@ pub async fn pins_from_subgraph(
             break;
         } else {
             tracing::info!("page length {} {}", subgraph.network, page.len());
-            skip += (PAGE_SIZE - 1);
+            skip += PAGE_SIZE - 1;
             all.extend(page);
         }
     }
