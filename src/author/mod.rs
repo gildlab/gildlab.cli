@@ -6,4 +6,5 @@ pub static AUTHORS: [&str; 7] = [
     "0xaa1decefc2b32ca6390c9773e4ecffe69a644ff7",
     "0x627a12ce1f6d42c9305e03e83fe044e8c3c1a32c",
     "0xbe14c8f33239db9699422b37f09aa86d93bb8ff6",
+    "0xbaa3e3dd6eeebf87af39fc35eeccdf12537db515",
 ];
