@@ -26,7 +26,6 @@ pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
         .into_iter()
         .flatten()
         .collect();
-    dbg!(pins.len());
     for pin in pins {
         println!("{}", bs58::encode(pin.to_bytes()).into_string());
     }
