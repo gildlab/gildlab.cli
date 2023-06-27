@@ -1,10 +1,6 @@
-
-# Devenv
-.devenv*
-devenv.local.nix
-
-
-
 # Added by cargo
 
 /target
+
+# flakes
+result
