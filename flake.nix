@@ -23,7 +23,7 @@
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ rustc cargo ] ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
+          nativeBuildInputs = with pkgs; [ rustc cargo iconv ] ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.darwin.apple_sdk.frameworks.Security
             pkgs.darwin.apple_sdk.frameworks.CoreFoundation
             pkgs.darwin.apple_sdk.frameworks.CoreServices
