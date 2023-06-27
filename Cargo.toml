@@ -1,6 +1,7 @@
 [package]
 name = "gildlab-cli"
 license = "CAL-1.0"
+description = "CLI tools for gildlab nodes."
 version = "0.1.0"
 edition = "2021"
 
