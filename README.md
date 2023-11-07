@@ -1,1 +1,1 @@
-# gildlab-cli
+# gildlab.cli
