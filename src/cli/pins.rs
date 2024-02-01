@@ -1,4 +1,4 @@
-use crate::author::AUTHORS;
+use crate::author::authors::get_authors;
 use crate::evm::network::Network;
 use crate::ipfs::IPFSCID;
 use crate::subgraph::Subgraph;
@@ -10,7 +10,17 @@ pub static NAME: &str = "pins";
 pub static ABOUT: &str = "Fetches all pins from all authors from all known subgraphs.";
 
 pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
-    let authors: Vec<String> = AUTHORS
+
+    
+let authors_future = get_authors();
+    
+    // Await the authors future to get the result
+    let authors_val = authors_future.await?;
+    
+    // Convert the Vec<u8> to Vec<String>
+    let _authors: Vec<String> = authors_val.iter().map(|&byte| byte.to_string()).collect();
+    
+    let authors: Vec<String> = _authors
         .into_iter()
         .map(|author| author.to_lowercase().into())
         .collect();

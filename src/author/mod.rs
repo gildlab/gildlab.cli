@@ -1,10 +1,58 @@
-pub static AUTHORS: [&str; 8] = [
-    "0x8058ad7c22fdc8788fe4cb1dac15d6e976127324",
-    "0xc0D477556c25C9d67E1f57245C7453DA776B51cf",
-    "0x6E37d34e35a5fF2f896eD9e76EC43e728adA1d18",
-    "0x2cb21fb0a2cebb57434b1a2b89c81e5f49cd484a",
-    "0xaa1decefc2b32ca6390c9773e4ecffe69a644ff7",
-    "0x627a12ce1f6d42c9305e03e83fe044e8c3c1a32c",
-    "0xbe14c8f33239db9699422b37f09aa86d93bb8ff6",
-    "0xbaa3e3dd6eeebf87af39fc35eeccdf12537db515",
-];
+pub mod authors {
+    use anyhow::{Result, anyhow};
+    use reqwest::Client;
+    use serde_cbor::from_slice;
+
+    async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
+        let client = Client::new();
+        let req = client.post(url)
+            .header("Content-Type", "application/json")
+            .body(serde_json::json!({ "query": query }).to_string())
+            .send()
+            .await?;
+        
+        let text = req.text().await?;
+        Ok(serde_json::from_str(&text)?)
+    }
+
+    async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
+        let data = fetch_subgraph_dt(url, query).await?;
+        if let Some(errors) = data.get("errors") {
+            println!("{:?}", errors);
+        }
+        Ok(data)
+    }
+
+pub fn cbor_decode(data: &str) -> Result<Vec<u8>> {
+    let trimmed_data = data.trim_start_matches(|c: char| !c.is_ascii_digit());
+    let decoded: Vec<u8> = from_slice(trimmed_data.as_bytes())?;
+    Ok(decoded)
+}
+
+pub async fn get_authors() -> Result<Vec<u8>> {
+    let query = r#"
+        query {
+          metaV1S {
+            meta
+          }
+        }
+    "#;
+
+    let url = "https://api.thegraph.com/subgraphs/name/ninokeldishvili/rain-metaboard";
+    let res = get_data(url, query).await?;
+    
+    if let Some(meta) = res.get("data")
+        .and_then(|data| data.get("metaV1S"))
+        .and_then(|meta_v1s| meta_v1s.get(0))
+        .and_then(|first_meta_v1| first_meta_v1.get("meta")) {
+        
+        let accounts: Vec<u8> = cbor_decode(&meta.to_string())?;
+        println!("{:?}", accounts);
+        Ok(accounts)
+    } else {
+        Err(anyhow!("Unable to fetch authors"))
+    }
+}
+
+}
+
