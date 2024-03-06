@@ -1,6 +1,8 @@
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde_cbor::from_slice;
+use serde_json::json;
+use mockito::mock;
 
 async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
     let client = Client::new();
@@ -52,26 +54,82 @@ pub async fn get_authors() -> Result<Vec<u8>> {
     }
 }
 
-
-
 #[cfg(test)]
 pub mod test {
- use super::*;
+    use super::*;
 
-    #[tokio::test]
-    async fn get_authors_test() {
+#[tokio::test]
+async fn test_fetch_subgraph_dt() {
+    // Arrange
+    let _m = mock("POST", "/graphql")
+        .match_header("Content-Type", "application/json")
+        .with_body(r#"{"query":"test query"}"#)
+        .create();
 
+    // Act
+    let result = fetch_subgraph_dt(&mockito::server_url(), "test query").await;
 
-        let authors_future = get_authors();
-        // Await the authors future to get the result
-        let authors_val = authors_future.await?;
- println!("{:?}", authors_val);
+    // Assert
+    assert!(result.is_ok());
+    let json_value = result.unwrap();
+    println!("{:?}", json_value);
+    assert_eq!(json_value, json!({ "test": "response" }));
+}
 
-//        let authors: Vec<String> = authors_val
-//             .into_iter()
-//             .map(|author| author.to_lowercase().into())
-//             .collect();
-//  println!("{:?}", authors);
-        assert_eq!(2+2,4);
-    }
+#[tokio::test]
+async fn test_get_data() {
+    // Mocking fetch_subgraph_dt
+    let fetch_mock = mock("POST", "/graphql")
+        .match_header("Content-Type", "application/json")
+        .with_body(r#"{"data": { "key": "value" }}"#)
+        .create();
+
+    // Act
+    let result = get_data(&mockito::server_url(), "test query").await;
+    println!("{:?}", result);
+
+    // Assert
+    assert!(result.is_ok());
+    let json_value = result.unwrap();
+    assert_eq!(json_value, json!({ "key": "value" }));
+
+    // Assert that the expected request was made
+    fetch_mock.assert();
+}
+
+#[test]
+fn test_cbor_decode() {
+    // Test case for valid input
+    let input = "12345";
+    let result = cbor_decode(input);
+    println!("{:?}", result);
+
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), vec![49, 50, 51, 52, 53]); // ASCII values of "12345"
+
+    // Test case for invalid input
+    let input = "abcde";
+    let result = cbor_decode(input);
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_get_authors() {
+    // Mocking get_data
+    let data_mock = mock("POST", "/graphql")
+        .match_header("Content-Type", "application/json")
+        .with_body(r#"{"data": { "metaV1S": [{ "meta": "12345" }] }}"#)
+        .create();
+
+    // Act
+    let result = get_authors().await;
+    println!("{:?}", result);
+
+    // Assert
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), vec![49, 50, 51, 52, 53]); // ASCII values of "12345"
+
+    // Assert that the expected request was made
+    data_mock.assert();
+}
 }
