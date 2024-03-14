@@ -3,6 +3,9 @@ use reqwest::Client;
 use serde_cbor::from_slice;
 use serde_json::json;
 use mockito::mock;
+use hex;
+use serde_json::Value;
+
 
 async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
     let client = Client::new();
@@ -24,9 +27,10 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
 }
 
 pub fn cbor_decode(data: &str) -> Result<Vec<u8>> {
-    let trimmed_data = data.trim_start_matches(|c: char| !c.is_ascii_digit());
-    let decoded: Vec<u8> = from_slice(trimmed_data.as_bytes())?;
-    Ok(decoded)
+let hex_decoded = hex::decode(&data.as_bytes()[2..])?;
+    let decoded: serde_cbor::Value = from_slice(&hex_decoded[8..])?;
+    dbg!(&decoded);
+    Ok(hex_decoded)
 }
 
 pub async fn get_authors() -> Result<Vec<u8>> {
@@ -40,13 +44,12 @@ pub async fn get_authors() -> Result<Vec<u8>> {
 
     let url = "https://api.thegraph.com/subgraphs/name/ninokeldishvili/rain-metaboard";
     let res = get_data(url, query).await?;
-
-    if let Some(meta) = res.get("data")
+    if let Some(Value::String(meta)) = res.get("data")
         .and_then(|data| data.get("metaV1S"))
         .and_then(|meta_v1s| meta_v1s.get(0))
         .and_then(|first_meta_v1| first_meta_v1.get("meta")) {
 
-        let accounts: Vec<u8> = cbor_decode(&meta.to_string())?;
+        let accounts: Vec<u8> = cbor_decode(&meta)?;
         println!("{:?}", accounts);
         Ok(accounts)
     } else {
