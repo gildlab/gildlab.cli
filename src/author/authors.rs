@@ -1,11 +1,15 @@
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde_cbor::from_slice;
-use serde_json::json;
-use mockito::mock;
 use hex;
-use serde_json::Value;
+use serde_json::{Value};
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Payload {
+    payload: Vec<u8>,
+    magic_number: String,
+}
 
 async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
     let client = Client::new();
@@ -26,18 +30,21 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
     Ok(data)
 }
 
-pub fn cbor_decode(data: &str) -> Result<Vec<u8>> {
-dbg!(&data);
-let test = "0xff0a89c674ee7874a200d84058a08058ad7c22fdc8788fe4cb1dac15d6e976127324c0d477556c25c9d67e1f57245c7453da776b51cf6e37d34e35a5ff2f896ed9e76ec43e728ada1d182cb21fb0a2cebb57434b1a2b89c81e5f49cd484aaa1decefc2b32ca6390c9773e4ecffe69a644ff7627a12ce1f6d42c9305e03e83fe044e8c3c1a32cbe14c8f33239db9699422b37f09aa86d93bb8ff6baa3e3dd6eeebf87af39fc35eeccdf12537db515011bffb2637608c0a000";
-    let hex_decoded = hex::decode(&test.as_bytes()[2..])?;
+fn cbor_decode(encoded_str: &str) -> Result<Vec<u8>>{
+    let extracted_substring = &encoded_str[18..]; //Remove rain meta magic_number
+    let encoded_bytes = hex::decode(extracted_substring).expect("Error decoding hex string");
+    let decoded: Payload = from_slice(&encoded_bytes)?;
 
-    let decoded: serde_cbor::Value = from_slice(&hex_decoded[8..])?;
-    dbg!(&hex_decoded[14..]);
+    let addresses: Vec<String> = decoded.payload.chunks(20)
+                              .map(|chunk| hex::encode(chunk))
+                              .collect();
 
-        for chunk in hex_decoded[14..].chunks(20) {
-            println!("Chunk: {:?}", chunk);
-        }
-    Ok(hex_decoded)
+    println!("Decoded Ethereum addresses:");
+    for address in addresses {
+        println!("0x{}", address);
+    }
+
+   Ok(encoded_bytes)
 }
 
 pub async fn get_authors() -> Result<Vec<u8>> {
@@ -55,9 +62,10 @@ pub async fn get_authors() -> Result<Vec<u8>> {
         .and_then(|data| data.get("metaV1S"))
         .and_then(|meta_v1s| meta_v1s.get(0))
         .and_then(|first_meta_v1| first_meta_v1.get("meta")) {
+        let test = "0xff0a89c674ee7874a2677061796c6f616498a01880185818ad187c182218fd18c81878188f18e418cb181d18ac1518d618e91876121873182418c018d418771855186c182518c918d6187e181f18571824185c1874185318da1877186b185118cf186e183718d3184e183518a518ff182f1889186e18d918e7186e18c4183e1872188a18da181d1818182c18b2181f18b018a218ce18bb18571843184b181a182b188918c8181e185f184918cd1848184a18aa181d18ec18ef18c218b3182c18a618390c1897187318e418ec18ff18e6189a1864184f18f71862187a1218ce181f186d184218c91830185e0318e8183f18e0184418e818c318c118a3182c18be1418c818f31832183918db189618991842182b183718f0189a18a8186d189318bb188f18f618ba18a318e318dd186e18ee18bf188718af183918fc183518ee18cc18df121853187d18b5156c6d616769635f6e756d6265727066666232363337363038633039653338";
 
-        let accounts: Vec<u8> = cbor_decode(&meta)?;
-//         println!("{:?}", accounts);
+        let accounts: Vec<u8> = cbor_decode(&test)?;
+
         Ok(accounts)
     } else {
         Err(anyhow!("Unable to fetch authors"))
@@ -82,7 +90,6 @@ async fn test_fetch_subgraph_dt() {
     // Assert
     assert!(result.is_ok());
     let json_value = result.unwrap();
-    println!("{:?}", json_value);
     assert_eq!(json_value, json!({ "test": "response" }));
 }
 
