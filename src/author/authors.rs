@@ -27,9 +27,16 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
 }
 
 pub fn cbor_decode(data: &str) -> Result<Vec<u8>> {
-let hex_decoded = hex::decode(&data.as_bytes()[2..])?;
+dbg!(&data);
+let test = "0xff0a89c674ee7874a200d84058a08058ad7c22fdc8788fe4cb1dac15d6e976127324c0d477556c25c9d67e1f57245c7453da776b51cf6e37d34e35a5ff2f896ed9e76ec43e728ada1d182cb21fb0a2cebb57434b1a2b89c81e5f49cd484aaa1decefc2b32ca6390c9773e4ecffe69a644ff7627a12ce1f6d42c9305e03e83fe044e8c3c1a32cbe14c8f33239db9699422b37f09aa86d93bb8ff6baa3e3dd6eeebf87af39fc35eeccdf12537db515011bffb2637608c0a000";
+    let hex_decoded = hex::decode(&test.as_bytes()[2..])?;
+
     let decoded: serde_cbor::Value = from_slice(&hex_decoded[8..])?;
-    dbg!(&decoded);
+    dbg!(&hex_decoded[14..]);
+
+        for chunk in hex_decoded[14..].chunks(20) {
+            println!("Chunk: {:?}", chunk);
+        }
     Ok(hex_decoded)
 }
 
@@ -50,7 +57,7 @@ pub async fn get_authors() -> Result<Vec<u8>> {
         .and_then(|first_meta_v1| first_meta_v1.get("meta")) {
 
         let accounts: Vec<u8> = cbor_decode(&meta)?;
-        println!("{:?}", accounts);
+//         println!("{:?}", accounts);
         Ok(accounts)
     } else {
         Err(anyhow!("Unable to fetch authors"))
