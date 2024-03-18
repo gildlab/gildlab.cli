@@ -32,8 +32,8 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
 
 fn cbor_decode(encoded_str: &str) -> Result<Vec<u8>>{
     let extracted_substring = &encoded_str[18..]; //Remove rain meta magic_number
-    let encoded_bytes = hex::decode(extracted_substring).expect("Error decoding hex string");
-    let decoded: Payload = from_slice(&encoded_bytes)?;
+    let encoded = hex::decode(extracted_substring).expect("Error decoding hex string");
+    let decoded: Payload = from_slice(&encoded)?;
 
     let addresses: Vec<String> = decoded.payload.chunks(20)
                               .map(|chunk| hex::encode(chunk))
@@ -44,7 +44,7 @@ fn cbor_decode(encoded_str: &str) -> Result<Vec<u8>>{
         println!("0x{}", address);
     }
 
-   Ok(encoded_bytes)
+   Ok(encoded)
 }
 
 pub async fn get_authors() -> Result<Vec<u8>> {
