@@ -3,7 +3,14 @@ use reqwest::Client;
 use serde_cbor::from_slice;
 use hex;
 use serde_json::{Value};
+use hex::FromHex;
 use serde::{Serialize, Deserialize};
+use rain_metadata::meta::{
+                             RainMetaDocumentV1Item, ContentType, ContentEncoding, ContentLanguage,
+                             KnownMagic
+                         };
+use rain_metadata::error::Error;
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Payload {
@@ -35,15 +42,6 @@ fn cbor_decode(encoded_str: &str) -> Result<Vec<u8>>{
     let encoded = hex::decode(extracted_substring).expect("Error decoding hex string");
     let decoded: Payload = from_slice(&encoded)?;
 
-    let addresses: Vec<String> = decoded.payload.chunks(20)
-                              .map(|chunk| hex::encode(chunk))
-                              .collect();
-
-    println!("Decoded Ethereum addresses:");
-    for address in addresses {
-        println!("0x{}", address);
-    }
-
    Ok(encoded)
 }
 
@@ -66,7 +64,81 @@ pub async fn get_authors() -> Result<Vec<u8>> {
 
         let accounts: Vec<u8> = cbor_decode(&test)?;
 
-        Ok(accounts)
+        let mock_data = [
+                       255,
+                       10,
+                       137,
+                       198,
+                       116,
+                       238,
+                       120,
+                       116,
+                       163,
+                       0,
+                       85,
+                       1,
+                       128,
+                       88,
+                       173,
+                       124,
+                       34,
+                       253,
+                       200,
+                       120,
+                       143,
+                       228,
+                       203,
+                       29,
+                       172,
+                       21,
+                       214,
+                       233,
+                       118,
+                       18,
+                       115,
+                       36,
+                       1,
+                       27,
+                       255,
+                       178,
+                       99,
+                       118,
+                       8,
+                       192,
+                       158,
+                       56,
+                       2,
+                       112,
+                       97,
+                       112,
+                       112,
+                       108,
+                       105,
+                       99,
+                       97,
+                       116,
+                       105,
+                       111,
+                       110,
+                       47,
+                       99,
+                       98,
+                       111,
+                       114
+        ];
+
+        let cbor_decoded = RainMetaDocumentV1Item::cbor_decode(&mock_data[8..])?;
+
+        let payload = &cbor_decoded[0].payload;
+        dbg!(&payload[0]);
+
+        let mut addresses: Vec<String> = Vec::new();
+                   if payload[0] == 1 {
+                       let address: String = hex::encode(payload);
+                       addresses.push(address);
+                   }
+                   dbg!(&addresses);
+                   Ok(accounts)
     } else {
         Err(anyhow!("Unable to fetch authors"))
     }
