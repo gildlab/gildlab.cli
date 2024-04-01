@@ -56,92 +56,37 @@ pub async fn get_authors() -> Result<Vec<u8>> {
 
     let url = "https://api.thegraph.com/subgraphs/name/ninokeldishvili/rain-metaboard";
     let res = get_data(url, query).await?;
-    if let Some(Value::String(meta)) = res.get("data")
-        .and_then(|data| data.get("metaV1S"))
-        .and_then(|meta_v1s| meta_v1s.get(0))
-        .and_then(|first_meta_v1| first_meta_v1.get("meta")) {
-        let test = "0xff0a89c674ee7874a2677061796c6f616498a01880185818ad187c182218fd18c81878188f18e418cb181d18ac1518d618e91876121873182418c018d418771855186c182518c918d6187e181f18571824185c1874185318da1877186b185118cf186e183718d3184e183518a518ff182f1889186e18d918e7186e18c4183e1872188a18da181d1818182c18b2181f18b018a218ce18bb18571843184b181a182b188918c8181e185f184918cd1848184a18aa181d18ec18ef18c218b3182c18a618390c1897187318e418ec18ff18e6189a1864184f18f71862187a1218ce181f186d184218c91830185e0318e8183f18e0184418e818c318c118a3182c18be1418c818f31832183918db189618991842182b183718f0189a18a8186d189318bb188f18f618ba18a318e318dd186e18ee18bf188718af183918fc183518ee18cc18df121853187d18b5156c6d616769635f6e756d62657272307866666232363337363038633039653338";
 
+        if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
+            for item in meta_v1s {
+                if let Some(meta_value) = item["meta"].as_str() {
+                     dbg!(&meta_value);
+
+//                      let meta = "ff0a89c674ee7874a3005501c0d477556c25c9d67e1f57245c7453da776b51cf011bffb2637608c09e3802706170706c69636174696f6e2f63626f72";
+                     let extracted_substring = &meta_value[18..]; //Remove rain meta magic_number
+                     let bytes_array_meta = hex::decode(extracted_substring).expect("Error decoding hex string");
+
+                     let cbor_decoded = RainMetaDocumentV1Item::cbor_decode(&bytes_array_meta)?;
+
+                     dbg!(&cbor_decoded);
+                     let payload = &cbor_decoded[0].payload;
+                     dbg!(&payload[0]);
+
+                     let mut addresses: Vec<String> = Vec::new();
+                     if payload[0] == 1 {
+                         let address: String = hex::encode(payload);
+                         addresses.push(address);
+                     }
+                     dbg!(&addresses);
+                }
+            }
+        }
+
+
+        let test = "0xff0a89c674ee7874a2677061796c6f616498a01880185818ad187c182218fd18c81878188f18e418cb181d18ac1518d618e91876121873182418c018d418771855186c182518c918d6187e181f18571824185c1874185318da1877186b185118cf186e183718d3184e183518a518ff182f1889186e18d918e7186e18c4183e1872188a18da181d1818182c18b2181f18b018a218ce18bb18571843184b181a182b188918c8181e185f184918cd1848184a18aa181d18ec18ef18c218b3182c18a618390c1897187318e418ec18ff18e6189a1864184f18f71862187a1218ce181f186d184218c91830185e0318e8183f18e0184418e818c318c118a3182c18be1418c818f31832183918db189618991842182b183718f0189a18a8186d189318bb188f18f618ba18a318e318dd186e18ee18bf188718af183918fc183518ee18cc18df121853187d18b5156c6d616769635f6e756d62657272307866666232363337363038633039653338";
         let accounts: Vec<u8> = cbor_decode(&test)?;
 
-        let mock_data = [
-                       255,
-                       10,
-                       137,
-                       198,
-                       116,
-                       238,
-                       120,
-                       116,
-                       163,
-                       0,
-                       85,
-                       1,
-                       128,
-                       88,
-                       173,
-                       124,
-                       34,
-                       253,
-                       200,
-                       120,
-                       143,
-                       228,
-                       203,
-                       29,
-                       172,
-                       21,
-                       214,
-                       233,
-                       118,
-                       18,
-                       115,
-                       36,
-                       1,
-                       27,
-                       255,
-                       178,
-                       99,
-                       118,
-                       8,
-                       192,
-                       158,
-                       56,
-                       2,
-                       112,
-                       97,
-                       112,
-                       112,
-                       108,
-                       105,
-                       99,
-                       97,
-                       116,
-                       105,
-                       111,
-                       110,
-                       47,
-                       99,
-                       98,
-                       111,
-                       114
-        ];
-
-        let cbor_decoded = RainMetaDocumentV1Item::cbor_decode(&mock_data[8..])?;
-
-        let payload = &cbor_decoded[0].payload;
-        dbg!(&payload[0]);
-
-        let mut addresses: Vec<String> = Vec::new();
-                   if payload[0] == 1 {
-                       let address: String = hex::encode(payload);
-                       addresses.push(address);
-                   }
-                   dbg!(&addresses);
-                   Ok(accounts)
-    } else {
-        Err(anyhow!("Unable to fetch authors"))
-    }
+        Ok(accounts)
 }
 
 #[cfg(test)]
