@@ -17,10 +17,7 @@ let authors_future = get_authors();
     // Await the authors future to get the result
     let authors_val = authors_future.await?;
     
-    // Convert the Vec<u8> to Vec<String>
-    let _authors: Vec<String> = authors_val.iter().map(|&byte| byte.to_string()).collect();
-    
-    let authors: Vec<String> = _authors
+    let authors: Vec<String> = authors_val
         .into_iter()
         .map(|author| author.to_lowercase().into())
         .collect();
