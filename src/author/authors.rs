@@ -1,8 +1,8 @@
-use anyhow::{Result};
-use reqwest::Client;
+use anyhow::Result;
 use hex;
-use serde::{Serialize, Deserialize};
-use rain_metadata::meta::{RainMetaDocumentV1Item};
+use rain_metadata::meta::RainMetaDocumentV1Item;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Payload {
@@ -12,7 +12,8 @@ struct Payload {
 
 async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
     let client = Client::new();
-    let req = client.post(url)
+    let req = client
+        .post(url)
         .header("Content-Type", "application/json")
         .body(serde_json::json!({ "query": query }).to_string())
         .send()
@@ -28,7 +29,6 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
     }
     Ok(data)
 }
-
 
 pub async fn get_authors() -> Result<Vec<String>> {
     let query = r#"

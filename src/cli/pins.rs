@@ -10,13 +10,11 @@ pub static NAME: &str = "pins";
 pub static ABOUT: &str = "Fetches all pins from all authors from all known subgraphs.";
 
 pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
+    let authors_future = get_authors();
 
-    
-let authors_future = get_authors();
-    
     // Await the authors future to get the result
     let authors_val = authors_future.await?;
-    
+
     let authors: Vec<String> = authors_val
         .into_iter()
         .map(|author| author.to_lowercase().into())
