@@ -58,7 +58,6 @@ pub async fn get_authors() -> Result<Vec<String>> {
                             let address_str: String = hex::encode(payload);
                             let modified_address = format!("0x{}", &address_str[2..]);
                             addresses.push(modified_address);
-                            dbg!(&addresses);
                         }
                     }
                     Err(err) => {
