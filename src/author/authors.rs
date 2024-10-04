@@ -3,6 +3,7 @@ use hex;
 use rain_metadata::meta::RainMetaDocumentV1Item;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::env;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Payload {
@@ -39,8 +40,8 @@ pub async fn get_authors() -> Result<Vec<String>> {
         }
     "#;
 
-    let url = "https://api.goldsky.com/api/public/project_clycy1691w08b01z43sljeooc/subgraphs/metaBoard-arb-sepolia/1.0.0/gn";
-    let res = get_data(url, query).await?;
+    let url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
+    let res = get_data(&url, query).await?;
 
     let mut addresses: Vec<String> = Vec::new();
     if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
