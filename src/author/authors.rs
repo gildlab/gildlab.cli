@@ -26,7 +26,7 @@ async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> 
 async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
     let data = fetch_subgraph_dt(url, query).await?;
     if let Some(errors) = data.get("errors") {
-        println!("{:?}", errors);
+        return Err(anyhow::anyhow!("Error(s) occurred: {:?}", errors));
     }
     Ok(data)
 }
