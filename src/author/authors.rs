@@ -61,7 +61,11 @@ pub async fn get_authors() -> Result<Vec<String>> {
                         }
                     }
                     Err(err) => {
-                        dbg!(&err);
+                        tracing::error!(
+                            "Error decoding CBOR for item: {:?}, error: {:?}",
+                            item,
+                            err
+                        );
                         continue;
                     }
                 }
