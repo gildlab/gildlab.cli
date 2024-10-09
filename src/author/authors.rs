@@ -43,7 +43,7 @@ pub async fn get_authors() -> Result<Vec<String>> {
     // Ensure the URL is using HTTPS for secure communication
     let url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
     if !url.starts_with("https://") {
-        return Err( anyhow::anyhow!("Invalid URL: Must use HTTPS"));
+        return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
     }
 
     let res = get_data(&url, query).await?;
@@ -54,7 +54,7 @@ pub async fn get_authors() -> Result<Vec<String>> {
             if let Some(meta_value) = item["meta"].as_str() {
                 if meta_value.len() < 18 {
                     // Avoid any out-of-bounds access
-        return Err(anyhow::anyhow!("Invalid meta data: too short"));
+                    return Err(anyhow::anyhow!("Invalid meta data: too short"));
                 }
 
                 let extracted_substring = &meta_value[18..]; // Remove rain meta magic_number
@@ -63,7 +63,7 @@ pub async fn get_authors() -> Result<Vec<String>> {
                 let bytes_array_meta = match hex::decode(extracted_substring) {
                     Ok(bytes) => bytes,
                     Err(e) => {
-        return Err(anyhow::anyhow!("Failed to decode hex string: {:?}", e));
+                        return Err(anyhow::anyhow!("Failed to decode hex string: {:?}", e));
                     }
                 };
 
@@ -81,7 +81,7 @@ pub async fn get_authors() -> Result<Vec<String>> {
                         let modified_address = format!("0x{}", &address_str[2..]);
 
                         // Validate address length and format before pushing
-                        if modified_address.len() == 42 {  // 42 chars for a valid address (0x + 40 chars)
+                        if modified_address.len() == 42 {
                             addresses.push(modified_address);
                         } else {
                             return Err(anyhow::anyhow!("Invalid address format"));
