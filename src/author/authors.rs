@@ -32,7 +32,9 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
 }
 
 pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
-    dbg!(&manager);
+    if manager.is_empty() {
+        return Err(anyhow::anyhow!("Manager address is not set"));
+    }
 
     let query = r#"
         query {
