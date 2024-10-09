@@ -31,7 +31,9 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
     Ok(data)
 }
 
-pub async fn get_authors() -> Result<Vec<String>> {
+pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
+    dbg!(&manager);
+
     let query = r#"
         query {
           metaV1S {
