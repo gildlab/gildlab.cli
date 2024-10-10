@@ -13,7 +13,13 @@ pub static ABOUT: &str = "Fetches all pins from all authors from all known subgr
 pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
     let manager = env::var("MANAGER_ADDRESS").expect("MANAGER_ADDRESS not set");
 
-    let authors_future = get_authors(&manager);
+    // Ensure the URL is using HTTPS for secure communication
+    let subgraph_url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
+    if !subgraph_url.starts_with("https://") {
+        return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
+    }
+
+    let authors_future = get_authors(&manager, &subgraph_url);
 
     // Await the authors future to get the result
     let authors_val = authors_future.await?;

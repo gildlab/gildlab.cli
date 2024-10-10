@@ -5,7 +5,6 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
-use std::env;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Payload {
@@ -39,7 +38,7 @@ async fn get_data(url: &str, query: &str, variables: Value) -> Result<Value> {
     Ok(data)
 }
 
-pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
+pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
     // Convert sender to lowercase for subgraph
     let manager_lowercase = manager.to_lowercase();
 
@@ -56,17 +55,19 @@ pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
        "sender": manager_lowercase,
     });
 
-    // Ensure the URL is using HTTPS for secure communication
-    let url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
-    if !url.starts_with("https://") {
-        return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
-    }
-
     let res = get_data(&url, query, variables).await?;
 
     let mut addresses: Vec<String> = Vec::new();
     if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
         for item in meta_v1s {
+            // Filter is made by query parameter, so the result data should already be
+            // filtered by manager address.
+            // Adding this filter because of test mainly
+            if let Some(sender) = item["sender"].as_str() {
+                if sender != manager {
+                    continue; // Skip non-manager entries
+                }
+            }
             if let Some(meta_value) = item["meta"].as_str() {
                 if meta_value.len() < 18 {
                     // Avoid any out-of-bounds access
@@ -116,4 +117,45 @@ pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
         }
     }
     Ok(addresses)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito::mock;
+    use serde_json::json;
+
+    #[tokio::test]
+    async fn test_get_authors_with_valid_manager() {
+        // Mock subgraph response for multiple addresses
+        let mock_subgraph_response = json!({
+            "data": {
+                "metaV1S": [
+                    {
+                        "meta": "0xff0a89c674ee7874a3005501c0d477556c25c9d67e1f57245c7453da776b51cf011bffb2637608c09e3802706170706c69636174696f6e2f63626f72", // Mock meta (manager)
+                        "sender": "0xc0d477556c25c9d67e1f57245c7453da776b51cf"
+                    },
+                    {
+                        "meta": "0xff0a89c674ee7874a3005501c0d477556c25c9d67e1f57245c7453da776b51cf011bffb2637608c09e3802706170706c69636174696f6e2f63626f72", // Another address's meta
+                        "sender": "0x8058ad7c22fdc8788fe4cb1dac15d6e976127324"
+                    }
+                ]
+            }
+        });
+
+        // Mock subgraph URL
+        let _m = mock("POST", "/")
+            .with_header("content-type", "application/json")
+            .with_body(mock_subgraph_response.to_string())
+            .create();
+
+        // Use mockito URL for testing
+        let subgraph_url = &mockito::server_url();
+
+        let manager_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
+        let result = get_authors(manager_address, &subgraph_url).await.unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(result.contains(&manager_address.to_string()));
+    }
 }
