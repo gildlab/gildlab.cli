@@ -3,6 +3,8 @@ use hex;
 use rain_metadata::meta::RainMetaDocumentV1Item;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
+use serde_json::Value;
 use std::env;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -11,20 +13,26 @@ struct Payload {
     magic_number: String,
 }
 
-async fn fetch_subgraph_dt(url: &str, query: &str) -> Result<serde_json::Value> {
+async fn fetch_subgraph_dt(url: &str, query: &str, variables: Value) -> Result<Value> {
     let client = Client::new();
+
+    let req_body = serde_json::json!({
+        "query": query,
+        "variables": variables
+    });
+
     let req = client
         .post(url)
         .header("Content-Type", "application/json")
-        .body(serde_json::json!({ "query": query }).to_string())
+        .body(req_body.to_string())
         .send()
         .await?;
     let text = req.text().await?;
     Ok(serde_json::from_str(&text)?)
 }
 
-async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
-    let data = fetch_subgraph_dt(url, query).await?;
+async fn get_data(url: &str, query: &str, variables: Value) -> Result<Value> {
+    let data = fetch_subgraph_dt(url, query, variables).await?;
     if let Some(errors) = data.get("errors") {
         return Err(anyhow::anyhow!("Error(s) occurred: {:?}", errors));
     }
@@ -32,17 +40,21 @@ async fn get_data(url: &str, query: &str) -> Result<serde_json::Value> {
 }
 
 pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
-    if manager.is_empty() {
-        return Err(anyhow::anyhow!("Manager address is not set"));
-    }
+    // Convert sender to lowercase for subgraph
+    let manager_lowercase = manager.to_lowercase();
 
     let query = r#"
-        query {
-          metaV1S {
-            meta
-          }
+        query MyQuery($sender: String!) {
+            metaV1S(where: { sender: $sender }) {
+                meta
+                sender
+            }
         }
     "#;
+
+    let variables = json!({
+       "sender": manager_lowercase,
+    });
 
     // Ensure the URL is using HTTPS for secure communication
     let url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
@@ -50,7 +62,7 @@ pub async fn get_authors(manager: &str) -> Result<Vec<String>> {
         return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
     }
 
-    let res = get_data(&url, query).await?;
+    let res = get_data(&url, query, variables).await?;
 
     let mut addresses: Vec<String> = Vec::new();
     if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
