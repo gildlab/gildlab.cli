@@ -158,4 +158,31 @@ mod tests {
         assert_eq!(result.len(), 1);
         assert!(result.contains(&manager_address.to_string()));
     }
+
+    #[tokio::test]
+    async fn test_get_authors_with_invalid_meta() {
+        let mock_subgraph_response = json!({
+            "data": {
+                "metaV1S": [
+                    {
+                        "meta": "0000000000000000",
+                        "sender": "0xc0d477556c25c9d67e1f57245c7453da776b51cf"
+                    }
+                ]
+            }
+        });
+
+        // Mock subgraph URL
+        let _m = mock("POST", "/")
+            .with_header("content-type", "application/json")
+            .with_body(mock_subgraph_response.to_string())
+            .create();
+
+        let subgraph_url = &mockito::server_url();
+
+        let manager_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
+        let result = get_authors(manager_address, &subgraph_url).await;
+
+        assert!(result.is_err());
+    }
 }
