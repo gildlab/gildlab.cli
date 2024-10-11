@@ -10,7 +10,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.70"
 bs58 = "0.4.0"
-clap = { version = "4.2.3", features = ["derive", "cargo"] }
+clap = { version = "4.5.20", features = ["derive", "cargo"] }
 futures = "0.3.28"
 graphql_client = "0.12.0"
 multihash = "0.18.1"

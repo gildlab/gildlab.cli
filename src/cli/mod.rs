@@ -10,7 +10,8 @@ pub async fn main() -> Result<()> {
         .subcommand(
             Command::new(pins::NAME)
                 .about(pins::ABOUT)
-                .arg(Arg::new("manager").long("manager").required(true)),
+                .arg(Arg::new("manager").long("manager"))
+                .arg(Arg::new("subgraph-url").long("subgraph-url")),
         )
         .get_matches();
 
