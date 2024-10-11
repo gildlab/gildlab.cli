@@ -10,8 +10,11 @@ use strum::IntoEnumIterator;
 pub static NAME: &str = "pins";
 pub static ABOUT: &str = "Fetches all pins from all authors from all known subgraphs.";
 
-pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
-    let manager = env::var("MANAGER_ADDRESS").expect("MANAGER_ADDRESS not set");
+pub async fn pins(arg_matches: &ArgMatches) -> anyhow::Result<()> {
+    // Use `get_one` to get the manager address from the command line arguments
+    let manager = arg_matches
+        .get_one::<String>("manager")
+        .expect("MANAGER_ADDRESS not set");
 
     // Ensure the URL is using HTTPS for secure communication
     let subgraph_url = env::var("ADDRESSES_SUBGRAPH_URL").expect("FETCH_URL not set");
@@ -19,7 +22,7 @@ pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
     }
 
-    let authors_future = get_authors(&manager, &subgraph_url);
+    let authors_future = get_authors(manager, &subgraph_url);
 
     // Await the authors future to get the result
     let authors_val = authors_future.await?;
