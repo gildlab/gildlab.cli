@@ -21,7 +21,7 @@ pub async fn pins(arg_matches: &ArgMatches) -> anyhow::Result<()> {
         .get_one::<String>("subgraph-url")
         .map(|s| s.to_string())
         .or_else(|| env::var("ADDRESSES_SUBGRAPH_URL").ok())
-        .expect("SUBGRAPH_URL not set");
+        .expect("ADDRESSES_SUBGRAPH_URL not set");
 
     // Ensure the URL is using HTTPS for secure communication
     if !subgraph_url.starts_with("https://") {
