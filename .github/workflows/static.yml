@@ -1,10 +1,10 @@
 on: push
 
-name: Test
+name: Format Check
 
 jobs:
-  test:
-    name: test
+  fmt:
+    name: Check Formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

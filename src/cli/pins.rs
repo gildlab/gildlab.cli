@@ -1,16 +1,39 @@
-use crate::author::AUTHORS;
+use crate::author::authors::get_authors;
 use crate::evm::network::Network;
 use crate::ipfs::IPFSCID;
 use crate::subgraph::Subgraph;
 use clap::ArgMatches;
 use std::collections::HashSet;
+use std::env;
 use strum::IntoEnumIterator;
 
 pub static NAME: &str = "pins";
 pub static ABOUT: &str = "Fetches all pins from all authors from all known subgraphs.";
 
-pub async fn pins(_matches: &ArgMatches) -> anyhow::Result<()> {
-    let authors: Vec<String> = AUTHORS
+pub async fn pins(arg_matches: &ArgMatches) -> anyhow::Result<()> {
+    let manager = arg_matches
+        .get_one::<String>("manager")
+        .map(|s| s.to_string())
+        .or_else(|| env::var("MANAGER_ADDRESS").ok())
+        .expect("MANAGER_ADDRESS not set");
+
+    let subgraph_url = arg_matches
+        .get_one::<String>("subgraph-url")
+        .map(|s| s.to_string())
+        .or_else(|| env::var("ADDRESSES_SUBGRAPH_URL").ok())
+        .expect("ADDRESSES_SUBGRAPH_URL not set");
+
+    // Ensure the URL is using HTTPS for secure communication
+    if !subgraph_url.starts_with("https://") {
+        return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
+    }
+
+    let authors_future = get_authors(&manager, &subgraph_url);
+
+    // Await the authors future to get the result
+    let authors_val = authors_future.await?;
+
+    let authors: Vec<String> = authors_val
         .into_iter()
         .map(|author| author.to_lowercase().into())
         .collect();
