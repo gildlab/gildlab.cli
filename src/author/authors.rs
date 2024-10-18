@@ -5,6 +5,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Payload {
@@ -39,7 +40,7 @@ async fn get_data(url: &str, query: &str, variables: Value) -> Result<Value> {
 }
 
 pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
-    // Convert sender to lowercase for subgraph
+    // Convert manager to lowercase for subgraph
     let manager_lowercase = manager.to_lowercase();
 
     let query = r#"
@@ -57,7 +58,8 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
 
     let res = get_data(&url, query, variables).await?;
 
-    let mut addresses: Vec<String> = Vec::new();
+    let mut address_actions: HashMap<String, u8> = HashMap::new();
+
     if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
         for item in meta_v1s {
             // Filter is made by query parameter, so the result data should already be
@@ -97,12 +99,14 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
                             continue;
                         }
 
-                        let address_str: String = hex::encode(payload);
-                        let modified_address = format!("0x{}", &address_str[2..]);
+                        let action_prefix = payload[0]; // 0 for remove, 1 for add
+                        let address_str: String = hex::encode(&payload[1..]);
+                        let modified_address = format!("0x{}", &address_str);
 
-                        // Validate address length and format before pushing
+                        // Validate address length and format before proceeding
                         if modified_address.len() == 42 {
-                            addresses.push(modified_address);
+                            // Track the last action for each address
+                            address_actions.insert(modified_address, action_prefix);
                         } else {
                             tracing::error!("Invalid Address format");
                             continue;
@@ -120,7 +124,21 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
             }
         }
     }
-    Ok(addresses)
+
+    // Filter addresses that have the last action as 'add' (1)
+    let filtered_addresses: Vec<String> = address_actions
+        .into_iter()
+        .filter_map(
+            |(address, action)| {
+                if action == 1 {
+                    Some(address)
+                } else {
+                    None
+                }
+            },
+        )
+        .collect();
+    Ok(filtered_addresses)
 }
 
 #[cfg(test)]
@@ -186,7 +204,6 @@ mod tests {
 
         let manager_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
         let result = get_authors(manager_address, &subgraph_url).await;
-
         assert!(result.is_err());
     }
 }
