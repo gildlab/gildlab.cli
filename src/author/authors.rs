@@ -214,7 +214,12 @@ mod tests {
         let addresses = result.unwrap();
 
         // Assert that the length of the addresses is 1
-        assert_eq!(addresses.len(), 1, "Expected 1 valid address, got {:?}", addresses.len());
+        assert_eq!(
+            addresses.len(),
+            1,
+            "Expected 1 valid address, got {:?}",
+            addresses.len()
+        );
         // Optionally, you can also assert that the address is the expected one
         let expected_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
         assert_eq!(addresses[0], expected_address, "Unexpected address");
