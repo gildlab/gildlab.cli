@@ -71,7 +71,8 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
             if let Some(meta_value) = item["meta"].as_str() {
                 if meta_value.len() < 18 {
                     // Avoid any out-of-bounds access
-                    return Err(anyhow::anyhow!("Invalid meta data: too short"));
+                    tracing::error!("Invalid meta data: too short");
+                    continue;
                 }
 
                 let extracted_substring = &meta_value[18..]; // Remove rain meta magic_number
@@ -80,7 +81,8 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
                 let bytes_array_meta = match hex::decode(extracted_substring) {
                     Ok(bytes) => bytes,
                     Err(e) => {
-                        return Err(anyhow::anyhow!("Failed to decode hex string: {:?}", e));
+                        tracing::error!("Failed to decode hex string: {:?}", e);
+                        continue;
                     }
                 };
 
@@ -90,8 +92,9 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
                         let payload = &cbor_decoded[0].payload;
 
                         // Ensure that the payload is of the correct length
-                        if payload.is_empty() || payload[0] != 1 {
-                            return Err(anyhow::anyhow!("Invalid payload structure"));
+                        if payload.is_empty() {
+                            tracing::error!("Invalid payload structure: {:?}", item);
+                            continue;
                         }
 
                         let address_str: String = hex::encode(payload);
@@ -101,7 +104,8 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
                         if modified_address.len() == 42 {
                             addresses.push(modified_address);
                         } else {
-                            return Err(anyhow::anyhow!("Invalid address format"));
+                            tracing::error!("Invalid Address format");
+                            continue;
                         }
                     }
                     Err(err) => {
