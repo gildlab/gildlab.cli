@@ -189,6 +189,10 @@ mod tests {
                     {
                         "meta": "0000000000000000",
                         "sender": "0xc0d477556c25c9d67e1f57245c7453da776b51cf"
+                    },
+                    {
+                        "meta": "0xff0a89c674ee7874a3005501c0d477556c25c9d67e1f57245c7453da776b51cf011bffb2637608c09e3802706170706c69636174696f6e2f63626f72", // Another address's meta
+                        "sender": "0xc0d477556c25c9d67e1f57245c7453da776b51cf"
                     }
                 ]
             }
@@ -204,6 +208,15 @@ mod tests {
 
         let manager_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
         let result = get_authors(manager_address, &subgraph_url).await;
-        assert!(result.is_err());
+        // Assert that the result is Ok and contains exactly one address
+        assert!(result.is_ok(), "Expected Ok result, got Err");
+
+        let addresses = result.unwrap();
+
+        // Assert that the length of the addresses is 1
+        assert_eq!(addresses.len(), 1, "Expected 1 valid address, got {:?}", addresses.len());
+        // Optionally, you can also assert that the address is the expected one
+        let expected_address = "0xc0d477556c25c9d67e1f57245c7453da776b51cf";
+        assert_eq!(addresses[0], expected_address, "Unexpected address");
     }
 }
