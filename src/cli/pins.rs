@@ -23,11 +23,6 @@ pub async fn pins(arg_matches: &ArgMatches) -> anyhow::Result<()> {
         .or_else(|| env::var("ADDRESSES_SUBGRAPH_URL").ok())
         .expect("ADDRESSES_SUBGRAPH_URL not set");
 
-    // Ensure the URL is using HTTPS for secure communication
-    if !subgraph_url.starts_with("https://") {
-        return Err(anyhow::anyhow!("Invalid URL: Must use HTTPS"));
-    }
-
     let authors_future = get_authors(&manager, &subgraph_url);
 
     // Await the authors future to get the result
