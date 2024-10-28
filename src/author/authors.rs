@@ -1,5 +1,6 @@
 use anyhow::Result;
 use hex;
+use rain_metadata::meta::magic::KnownMagic;
 use rain_metadata::meta::RainMetaDocumentV1Item;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -57,7 +58,6 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
     });
 
     let res = get_data(&url, query, variables).await?;
-
     let mut address_actions: HashMap<String, u8> = HashMap::new();
 
     if let Some(meta_v1s) = res["data"]["metaV1S"].as_array() {
@@ -92,24 +92,26 @@ pub async fn get_authors(manager: &str, url: &str) -> Result<Vec<String>> {
                 match RainMetaDocumentV1Item::cbor_decode(&bytes_array_meta) {
                     Ok(cbor_decoded) => {
                         let payload = &cbor_decoded[0].payload;
+                        let magic = &cbor_decoded[0].magic;
+                        if magic == &KnownMagic::AddressList {
+                            // Ensure that the payload is of the correct length
+                            if payload.is_empty() {
+                                tracing::error!("Invalid payload structure: {:?}", item);
+                                continue;
+                            }
 
-                        // Ensure that the payload is of the correct length
-                        if payload.is_empty() {
-                            tracing::error!("Invalid payload structure: {:?}", item);
-                            continue;
-                        }
+                            let action_prefix = payload[0]; // 0 for remove, 1 for add
+                            let address_str: String = hex::encode(&payload[1..]);
+                            let modified_address = format!("0x{}", &address_str);
 
-                        let action_prefix = payload[0]; // 0 for remove, 1 for add
-                        let address_str: String = hex::encode(&payload[1..]);
-                        let modified_address = format!("0x{}", &address_str);
-
-                        // Validate address length and format before proceeding
-                        if modified_address.len() == 42 {
-                            // Track the last action for each address
-                            address_actions.insert(modified_address, action_prefix);
-                        } else {
-                            tracing::error!("Invalid Address format");
-                            continue;
+                            // Validate address length and format before proceeding
+                            if modified_address.len() == 42 {
+                                // Track the last action for each address
+                                address_actions.insert(modified_address, action_prefix);
+                            } else {
+                                tracing::error!("Invalid Address format");
+                                continue;
+                            }
                         }
                     }
                     Err(err) => {
